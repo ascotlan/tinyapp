@@ -133,6 +133,17 @@ app.post("/urls/:id/delete", (req, res) => {
     .send({ Error: "client requests a short URL with a non-existant id" });
 });
 
+app.post("/urls/:id", (req, res) => {
+  if (urlDatabase[req.params.id]) {
+    urlDatabase[req.params.id] = req.body.longURL;
+    return res.redirect("/urls");
+  }
+
+  res
+    .status(404)
+    .send({ Error: "client requests a short URL with a non-existant id" });
+});
+
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
