@@ -94,7 +94,11 @@ app.get("/urls", (req, res) => {
 app.post("/urls", (req, res) => {
   const id = generateRandomString(); //generate random id string
   urlDatabase[id] = req.body.longURL; //populate database with new id:LongURL key:value pair
-  res.send("Ok"); // Respond with 'Ok' (we will replace this)
+
+  // The `res.redirect()` function sends back an HTTP 302 by default.
+  // When an HTTP client receives a response with status 302, it will send
+  // an HTTP request to the URL in the response
+  res.redirect(`/urls/${id}`);
 });
 
 app.get("/urls/new", (req, res) => {
