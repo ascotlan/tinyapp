@@ -122,6 +122,17 @@ app.get("/u/:id", (req, res) => {
   res.redirect(longURL);
 });
 
+app.post("/urls/:id/delete", (req, res) => {
+  if (urlDatabase[req.params.id]) {
+    delete urlDatabase[req.params.id];
+    return res.redirect("/urls");
+  }
+
+  res
+    .status(404)
+    .send({ Error: "client requests a short URL with a non-existant id" });
+});
+
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
