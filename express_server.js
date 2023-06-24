@@ -107,7 +107,18 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:id", (req, res) => {
   const id = req.params.id;
-  res.render("urls_show", { longURL: urlDatabase[id], id });
+  if (urlDatabase[id]) {
+    return res.render("urls_show", { longURL: urlDatabase[id], id });
+  }
+
+  res
+    .status(404)
+    .send({ Error: "client requests a short URL with a non-existant id" });
+});
+
+app.get("/u/:id", (req, res) => {
+  const longURL = urlDatabase[req.params.id];
+  res.redirect(longURL);
 });
 
 app.get("/urls.json", (req, res) => {
