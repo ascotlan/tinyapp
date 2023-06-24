@@ -5,6 +5,9 @@ const PORT = 8080; // default port 8080
 //set view engine as ejs
 app.set("view engine", "ejs");
 
+// Use middleware to encode form data to UTF-8 that is sent as a buffer
+app.use(express.urlencoded({ extended: true }));
+
 //sample database
 const urlDatabase = {
   b2xVn2: "http://www.lighthouselabs.ca",
@@ -18,6 +21,10 @@ app.get("/", (req, res) => {
 
 app.get("/urls", (req, res) => {
   res.render("urls_index", { urls: urlDatabase });
+});
+
+app.get("/urls/new", (req, res) => {
+  res.render("urls_new");
 });
 
 app.get("/urls/:id", (req, res) => {
