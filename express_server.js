@@ -83,15 +83,18 @@ function generateRandomString() {
   return result;
 }
 
-// route handlers
+//****route handlers****//
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
+//render dynamic url values at view urls_index when /urls endpoint receives GET
 app.get("/urls", (req, res) => {
   res.render("urls_index", { urls: urlDatabase });
 });
 
+//Save new database entry with random string ID with a POST to /urls
 app.post("/urls", (req, res) => {
   const id = generateRandomString(); //generate random id string
   urlDatabase[id] = req.body.longURL; //populate database with new id:LongURL key:value pair
@@ -102,10 +105,22 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${id}`);
 });
 
+//Display view urls_new with GET to /urls/new
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
 
+//Set cookie value to username and send back cookie to browser, then redirect to /urls with a POST to route /logins
+app.post("/login", (req, res) => {
+  if (req.body.username.length) {
+    res.cookie("username", req.body.username);
+    return res.redirect("/urls");
+  }
+
+  res.status(400).send({ Error: "Please enter a Username" });
+});
+
+//render view urls_show with dynamic data based on id when GET sent to /urls/:id
 app.get("/urls/:id", (req, res) => {
   const id = req.params.id;
   if (urlDatabase[id]) {
@@ -117,11 +132,13 @@ app.get("/urls/:id", (req, res) => {
     .send({ Error: "client requests a short URL with a non-existant id" });
 });
 
+//Redirect to longURL value based on id when GET is sent to /u/:id
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id];
   res.redirect(longURL);
 });
 
+//Delete database entry based on id when a POST is sent to /urls/:id/delete
 app.post("/urls/:id/delete", (req, res) => {
   if (urlDatabase[req.params.id]) {
     delete urlDatabase[req.params.id];
@@ -133,6 +150,7 @@ app.post("/urls/:id/delete", (req, res) => {
     .send({ Error: "client requests a short URL with a non-existant id" });
 });
 
+//Update value to database entry based on id when a POST is sent to endpoint /urls/:id
 app.post("/urls/:id", (req, res) => {
   if (urlDatabase[req.params.id]) {
     urlDatabase[req.params.id] = req.body.longURL;
@@ -144,6 +162,7 @@ app.post("/urls/:id", (req, res) => {
     .send({ Error: "client requests a short URL with a non-existant id" });
 });
 
+//Respond with stringyfied JSON copy of database when a GET is sent to the /urls.json endpoint
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
@@ -152,6 +171,7 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
+//listen on a given port
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
