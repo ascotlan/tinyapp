@@ -1,12 +1,16 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
+const cookieParser = require("cookie-parser"); //require cookie parser middleware
 
 //set view engine as ejs
 app.set("view engine", "ejs");
 
 // Use middleware to encode form data to UTF-8 that is sent as a buffer
 app.use(express.urlencoded({ extended: true }));
+
+// Use middleware to Parse Cookie header and populate req.cookies with an object keyed by the cookie names.
+app.use(cookieParser());
 
 //sample database
 const urlDatabase = {
@@ -89,9 +93,12 @@ app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
-//render dynamic url values at view urls_index when /urls endpoint receives GET
+//render dynamic url values for the database and cookies at view urls_index when /urls endpoint receives GET
 app.get("/urls", (req, res) => {
-  res.render("urls_index", { urls: urlDatabase });
+  res.render("urls_index", {
+    urls: urlDatabase,
+    username: req.cookies["username"],
+  });
 });
 
 //Save new database entry with random string ID with a POST to /urls
@@ -107,7 +114,7 @@ app.post("/urls", (req, res) => {
 
 //Display view urls_new with GET to /urls/new
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  res.render("urls_new", { username: req.cookies["username"] });
 });
 
 //Set cookie value to username and send back cookie to browser, then redirect to /urls with a POST to route /logins
@@ -124,7 +131,11 @@ app.post("/login", (req, res) => {
 app.get("/urls/:id", (req, res) => {
   const id = req.params.id;
   if (urlDatabase[id]) {
-    return res.render("urls_show", { longURL: urlDatabase[id], id });
+    return res.render("urls_show", {
+      longURL: urlDatabase[id],
+      id,
+      username: req.cookies["username"],
+    });
   }
 
   res
