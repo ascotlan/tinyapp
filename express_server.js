@@ -112,11 +112,6 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${id}`);
 });
 
-//Display view urls_new with GET to /urls/new
-app.get("/urls/new", (req, res) => {
-  res.render("urls_new", { username: req.cookies["username"] });
-});
-
 //Set cookie value to username and send back cookie to browser, then redirect to /urls with a POST to route /logins
 app.post("/login", (req, res) => {
   if (req.body.username.length) {
@@ -125,6 +120,17 @@ app.post("/login", (req, res) => {
   }
 
   res.status(400).send({ Error: "Please enter a Username" });
+});
+
+//Implement the /logout endpoint so that it clears the username cookie and redirects the user back to the /urls page.
+app.post("/logout", (req, res) => {
+  res.clearCookie("username");
+  res.redirect("/urls");
+});
+
+//Display view urls_new with GET to /urls/new
+app.get("/urls/new", (req, res) => {
+  res.render("urls_new", { username: req.cookies["username"] });
 });
 
 //render view urls_show with dynamic data based on id when GET sent to /urls/:id
