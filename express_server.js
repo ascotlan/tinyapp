@@ -142,6 +142,11 @@ app.get("/register", (req, res) => {
   res.render("register");
 });
 
+//Route handler: GET User login page
+app.get("/login", (req, res) => {
+  res.render("login");
+});
+
 //Route handler: POST user sign up data and create a new user
 app.post("/register", (req, res) => {
   const id = generateRandomString();
