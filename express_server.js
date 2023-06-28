@@ -168,21 +168,22 @@ app.post("/register", (req, res) => {
   });
 });
 
-//Set cookie value to username and send back cookie to browser, then redirect to /urls with a POST to route /logins
+//Set cookie value to user_id and send back cookie to browser, then redirect to /urls with a POST to route /logins
 app.post("/login", (req, res) => {
   const user = getUserByEmail(req.body.email);
-  if (user) {
+  const correctPassword = user ? user.password === req.body.password : null;
+  if (user && correctPassword) {
     res.cookie("user_id", user.id);
     return res.redirect("/urls");
   }
 
-  res.status(400).send();
+  res.status(403).send();
 });
 
 //Implement the /logout endpoint so that it clears the user_id cookie and redirects the user back to the /urls page.
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 
 //Display view urls_new with GET to /urls/new
@@ -193,6 +194,7 @@ app.get("/urls/new", (req, res) => {
 //render view urls_show with dynamic data based on id when GET sent to /urls/:id
 app.get("/urls/:id", (req, res) => {
   const id = req.params.id;
+
   if (urlDatabase[id]) {
     return res.render("urls_show", {
       longURL: urlDatabase[id],
