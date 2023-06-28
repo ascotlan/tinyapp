@@ -111,7 +111,7 @@ app.get("/", (req, res) => {
 app.get("/urls", (req, res) => {
   res.render("urls_index", {
     urls: urlDatabase,
-    username: req.cookies["username"],
+    user: users[req.cookies["user_id"]],
   });
 });
 
@@ -134,13 +134,14 @@ app.get("/register", (req, res) => {
 //Route handler: POST user sign up data and create a new user
 app.post("/register", (req, res) => {
   const id = generateRandomString();
+
   if (req.body.email.length && req.body.password.length) {
     users[id] = {
       id,
       email: req.body.email,
       password: req.body.password,
     };
-    console.log(users);
+
     res.cookie("user_id", id);
     return res.redirect("/urls");
   }
@@ -158,15 +159,15 @@ app.post("/login", (req, res) => {
   res.status(400).send({ Error: "Please enter a Username" });
 });
 
-//Implement the /logout endpoint so that it clears the username cookie and redirects the user back to the /urls page.
+//Implement the /logout endpoint so that it clears the user_id cookie and redirects the user back to the /urls page.
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect("/urls");
 });
 
 //Display view urls_new with GET to /urls/new
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new", { username: req.cookies["username"] });
+  res.render("urls_new", { user: users[req.cookies["user_id"]] });
 });
 
 //render view urls_show with dynamic data based on id when GET sent to /urls/:id
@@ -176,7 +177,7 @@ app.get("/urls/:id", (req, res) => {
     return res.render("urls_show", {
       longURL: urlDatabase[id],
       id,
-      username: req.cookies["username"],
+      user: users[req.cookies["user_id"]],
     });
   }
 
