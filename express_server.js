@@ -32,8 +32,19 @@ const users = {
   },
 };
 
+// Check if usr registration email already exists in the users database
+const getUserByEmail = function (email) {
+  for (profile of Object.values(users)) {
+    if (profile.email === email) {
+      return profile;
+    }
+  }
+
+  return null;
+};
+
 // Generate random string of 6 alphanumeric characters
-function generateRandomString() {
+const generateRandomString = function () {
   let result = "";
   const letters = {
     0: "a",
@@ -99,7 +110,7 @@ function generateRandomString() {
   }
 
   return result;
-}
+};
 
 //****route handlers****//
 
@@ -134,8 +145,9 @@ app.get("/register", (req, res) => {
 //Route handler: POST user sign up data and create a new user
 app.post("/register", (req, res) => {
   const id = generateRandomString();
+  const user = getUserByEmail(req.body.email);
 
-  if (req.body.email.length && req.body.password.length) {
+  if (req.body.email.length && req.body.password.length && !user) {
     users[id] = {
       id,
       email: req.body.email,
@@ -146,7 +158,9 @@ app.post("/register", (req, res) => {
     return res.redirect("/urls");
   }
 
-  res.status(400).send();
+  res.status(400).send({
+    error: `User email ${user.email} is already in use. Try another email address.`,
+  });
 });
 
 //Set cookie value to username and send back cookie to browser, then redirect to /urls with a POST to route /logins
