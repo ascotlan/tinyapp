@@ -112,6 +112,11 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${id}`);
 });
 
+//Route handler: User sign up page
+app.get("/register", (req, res) => {
+  res.render("register");
+});
+
 //Set cookie value to username and send back cookie to browser, then redirect to /urls with a POST to route /logins
 app.post("/login", (req, res) => {
   if (req.body.username.length) {
