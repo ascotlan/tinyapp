@@ -170,12 +170,13 @@ app.post("/register", (req, res) => {
 
 //Set cookie value to username and send back cookie to browser, then redirect to /urls with a POST to route /logins
 app.post("/login", (req, res) => {
-  if (req.body.username.length) {
-    res.cookie("username", req.body.username);
+  const user = getUserByEmail(req.body.email);
+  if (user) {
+    res.cookie("user_id", user.id);
     return res.redirect("/urls");
   }
 
-  res.status(400).send({ Error: "Please enter a Username" });
+  res.status(400).send();
 });
 
 //Implement the /logout endpoint so that it clears the user_id cookie and redirects the user back to the /urls page.

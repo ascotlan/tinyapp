@@ -31,19 +31,10 @@
       </p>
     </form>
     <% } else{%>
-    <form class="form-inline" action="/login" method="post">
-      <input
-        class="form-control mr-sm-2"
-        type="text"
-        value=""
-        placeholder="Username"
-        name="username"
-        style="width: 300px"
-      />
-      <button class="btn btn-outline-dark my-2 my-sm-0" type="submit">
-        Login
-      </button>
-    </form>
+    <div class="btn-group" role="group" aria-label="Basic example">
+      <a href="/login" class="btn btn-dark">Login</a>
+      <a href="/register" class="btn btn-primary">Register</a>
+    </div>
     <% } %>
   </nav>
 </header>
