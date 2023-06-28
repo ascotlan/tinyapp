@@ -12,10 +12,24 @@ app.use(express.urlencoded({ extended: true }));
 // Use middleware to Parse Cookie header and populate req.cookies with an object keyed by the cookie names.
 app.use(cookieParser());
 
-//sample database
+//sample url database
 const urlDatabase = {
   b2xVn2: "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com",
+};
+
+//sample user database
+const users = {
+  userRandomID: {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur",
+  },
+  user2RandomID: {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk",
+  },
 };
 
 // Generate random string of 6 alphanumeric characters
@@ -112,9 +126,26 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${id}`);
 });
 
-//Route handler: User sign up page
+//Route handler: GET User sign up page
 app.get("/register", (req, res) => {
   res.render("register");
+});
+
+//Route handler: POST user sign up data and create a new user
+app.post("/register", (req, res) => {
+  const id = generateRandomString();
+  if (req.body.email.length && req.body.password.length) {
+    users[id] = {
+      id,
+      email: req.body.email,
+      password: req.body.password,
+    };
+    console.log(users);
+    res.cookie("user_id", id);
+    return res.redirect("/urls");
+  }
+
+  res.status(400).send();
 });
 
 //Set cookie value to username and send back cookie to browser, then redirect to /urls with a POST to route /logins
