@@ -128,6 +128,12 @@ app.get("/urls", (req, res) => {
 
 //Save new database entry with random string ID with a POST to /urls
 app.post("/urls", (req, res) => {
+  if (!req.cookies["user_id"]) {
+    return res.status(403).render("error", {
+      error: "Only Registered Users Can Shorten URLs",
+    });
+  }
+
   const id = generateRandomString(); //generate random id string
   urlDatabase[id] = req.body.longURL; //populate database with new id:LongURL key:value pair
 
@@ -139,11 +145,17 @@ app.post("/urls", (req, res) => {
 
 //Route handler: GET User sign up page
 app.get("/register", (req, res) => {
+  if (req.cookies["user_id"]) {
+    return res.redirect("/urls");
+  }
   res.render("register");
 });
 
 //Route handler: GET User login page
 app.get("/login", (req, res) => {
+  if (req.cookies["user_id"]) {
+    return res.redirect("/urls");
+  }
   res.render("login");
 });
 
@@ -163,7 +175,7 @@ app.post("/register", (req, res) => {
     return res.redirect("/urls");
   }
 
-  res.status(400).send({
+  res.status(400).render("error", {
     error: `User email ${user.email} is already in use. Try another email address.`,
   });
 });
@@ -177,7 +189,10 @@ app.post("/login", (req, res) => {
     return res.redirect("/urls");
   }
 
-  res.status(403).send();
+  res.status(403).render("error", {
+    error:
+      "User and/or password does not exist. Try again or register new account",
+  });
 });
 
 //Implement the /logout endpoint so that it clears the user_id cookie and redirects the user back to the /urls page.
@@ -188,6 +203,9 @@ app.post("/logout", (req, res) => {
 
 //Display view urls_new with GET to /urls/new
 app.get("/urls/new", (req, res) => {
+  if (!req.cookies["user_id"]) {
+    return res.redirect("/login");
+  }
   res.render("urls_new", { user: users[req.cookies["user_id"]] });
 });
 
@@ -203,9 +221,9 @@ app.get("/urls/:id", (req, res) => {
     });
   }
 
-  res
-    .status(404)
-    .send({ Error: "client requests a short URL with a non-existant id" });
+  res.status(404).render("error", {
+    error: "client requests a short URL with a non-existant id",
+  });
 });
 
 //Redirect to longURL value based on id when GET is sent to /u/:id
@@ -221,9 +239,9 @@ app.post("/urls/:id/delete", (req, res) => {
     return res.redirect("/urls");
   }
 
-  res
-    .status(404)
-    .send({ Error: "client requests a short URL with a non-existant id" });
+  res.status(404).render("error", {
+    error: "client trying to delete a short URL with a non-existant id",
+  });
 });
 
 //Update value to database entry based on id when a POST is sent to endpoint /urls/:id
@@ -233,9 +251,9 @@ app.post("/urls/:id", (req, res) => {
     return res.redirect("/urls");
   }
 
-  res
-    .status(404)
-    .send({ Error: "client requests a short URL with a non-existant id" });
+  res.status(404).render("error", {
+    error: "client trying to update a short URL with a non-existant id",
+  });
 });
 
 //Respond with stringyfied JSON copy of database when a GET is sent to the /urls.json endpoint
