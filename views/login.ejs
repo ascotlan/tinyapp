@@ -13,6 +13,7 @@
     />
   </head>
   <body>
+    <%- include('partials/_header') %>
     <main class="mx-auto p-4" style="max-width: 20em">
       <h2 class="mb-3">User Login</h2>
       <form action="/login" method="post">
@@ -40,6 +41,7 @@
           <button type="submit" class="btn btn-success mt-3">Login</button>
         </div>
       </form>
+      <%- include('partials/_footer') %>
     </main>
 
     <!-- Bootstrap JS -->

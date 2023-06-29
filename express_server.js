@@ -14,8 +14,14 @@ app.use(cookieParser());
 
 //sample url database
 const urlDatabase = {
-  b2xVn2: "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW",
+  },
 };
 
 //sample user database
@@ -41,6 +47,17 @@ const getUserByEmail = function (email) {
   }
 
   return null;
+};
+
+//returns the URLs where the userID is equal to the id of the currently logged-in user
+const urlsForUser = (id) => {
+  const result = {};
+  for (let urlId in urlDatabase) {
+    if (urlDatabase[urlId].userID === id) {
+      result[urlId] = urlDatabase[urlId];
+    }
+  }
+  return result;
 };
 
 // Generate random string of 6 alphanumeric characters
@@ -120,10 +137,14 @@ app.get("/", (req, res) => {
 
 //render dynamic url values for the database and cookies at view urls_index when /urls endpoint receives GET
 app.get("/urls", (req, res) => {
-  res.render("urls_index", {
-    urls: urlDatabase,
-    user: users[req.cookies["user_id"]],
-  });
+  const id = req.cookies["user_id"];
+  if (id) {
+    return res.render("urls_index", {
+      urls: urlsForUser(id),
+      user: users[id],
+    });
+  }
+  res.render("landingPage", { user: "" });
 });
 
 //Save new database entry with random string ID with a POST to /urls
@@ -135,7 +156,10 @@ app.post("/urls", (req, res) => {
   }
 
   const id = generateRandomString(); //generate random id string
-  urlDatabase[id] = req.body.longURL; //populate database with new id:LongURL key:value pair
+  urlDatabase[id] = {
+    longURL: req.body.longURL,
+    userID: req.cookies["user_id"],
+  }; //populate database with new id:LongURL key:value pair
 
   // The `res.redirect()` function sends back an HTTP 302 by default.
   // When an HTTP client receives a response with status 302, it will send
@@ -148,7 +172,7 @@ app.get("/register", (req, res) => {
   if (req.cookies["user_id"]) {
     return res.redirect("/urls");
   }
-  res.render("register");
+  res.render("register", { user: "", error: "" });
 });
 
 //Route handler: GET User login page
@@ -156,7 +180,7 @@ app.get("/login", (req, res) => {
   if (req.cookies["user_id"]) {
     return res.redirect("/urls");
   }
-  res.render("login");
+  res.render("login", { user: "", error: "" });
 });
 
 //Route handler: POST user sign up data and create a new user
@@ -175,8 +199,9 @@ app.post("/register", (req, res) => {
     return res.redirect("/urls");
   }
 
-  res.status(400).render("error", {
-    error: `User email ${user.email} is already in use. Try another email address.`,
+  res.status(400).render("register", {
+    user: "",
+    error: `${user.email} is already in use. Try another email address.`,
   });
 });
 
@@ -189,9 +214,10 @@ app.post("/login", (req, res) => {
     return res.redirect("/urls");
   }
 
-  res.status(403).render("error", {
+  res.status(403).render("login", {
+    user: "",
     error:
-      "User and/or password does not exist. Try again or register new account",
+      "Email and/or password does not exist. Please try again or register new account.",
   });
 });
 
@@ -212,48 +238,92 @@ app.get("/urls/new", (req, res) => {
 //render view urls_show with dynamic data based on id when GET sent to /urls/:id
 app.get("/urls/:id", (req, res) => {
   const id = req.params.id;
+  const userDb = urlsForUser(req.cookies["user_id"]);
 
-  if (urlDatabase[id]) {
-    return res.render("urls_show", {
-      longURL: urlDatabase[id],
-      id,
+  if (req.cookies["user_id"]) {
+    if (userDb[id]) {
+      res.render("urls_show", {
+        longURL: userDb[id].longURL,
+        id,
+        user: users[req.cookies["user_id"]],
+      });
+    } else if (urlDatabase[id]) {
+      res.status(403).render("missing", {
+        user: users[req.cookies["user_id"]],
+        error:
+          "client request for a shortened URL denied because you do not have permission to access resource.",
+      });
+    } else {
+      res.status(404).render("missing", {
+        user: users[req.cookies["user_id"]],
+        error: "client requests a shortened URL with a non-existant id.",
+      });
+    }
+  } else {
+    res.status(401).render("missing", {
       user: users[req.cookies["user_id"]],
+      error:
+        "client request for a shortened URL denied because you are not logged in.",
     });
   }
-
-  res.status(404).render("error", {
-    error: "client requests a short URL with a non-existant id",
-  });
 });
 
 //Redirect to longURL value based on id when GET is sent to /u/:id
 app.get("/u/:id", (req, res) => {
-  const longURL = urlDatabase[req.params.id];
+  const longURL = urlDatabase[req.params.id].longURL;
   res.redirect(longURL);
 });
 
 //Delete database entry based on id when a POST is sent to /urls/:id/delete
 app.post("/urls/:id/delete", (req, res) => {
-  if (urlDatabase[req.params.id]) {
-    delete urlDatabase[req.params.id];
-    return res.redirect("/urls");
-  }
+  const userDb = urlsForUser(req.cookies["user_id"]);
 
-  res.status(404).render("error", {
-    error: "client trying to delete a short URL with a non-existant id",
-  });
+  if (req.cookies["user_id"]) {
+    if (userDb[req.params.id]) {
+      delete urlDatabase[req.params.id];
+      res.redirect("/urls");
+    } else if (urlDatabase[req.params.id]) {
+      res.status(403).render("error", {
+        error:
+          "client cannot delete this shortened URL because you do not have permission to access this resource.",
+      });
+    } else {
+      res.status(404).render("error", {
+        error: "client trying to delete a shortened URL with a non-existant id",
+      });
+    }
+  } else {
+    res.status(401).render("error", {
+      error:
+        "client cannot delete a shortened URL because you are not logged in.",
+    });
+  }
 });
 
 //Update value to database entry based on id when a POST is sent to endpoint /urls/:id
 app.post("/urls/:id", (req, res) => {
-  if (urlDatabase[req.params.id]) {
-    urlDatabase[req.params.id] = req.body.longURL;
-    return res.redirect("/urls");
-  }
+  const userDb = urlsForUser(req.cookies["user_id"]);
 
-  res.status(404).render("error", {
-    error: "client trying to update a short URL with a non-existant id",
-  });
+  if (req.cookies["user_id"]) {
+    if (userDb[req.params.id]) {
+      urlDatabase[req.params.id].longURL = req.body.longURL;
+      res.redirect("/urls");
+    } else if (urlDatabase[req.params.id]) {
+      res.status(403).render("error", {
+        error:
+          "client cannot update this shortened URL because you do not have permission to access this resource.",
+      });
+    } else {
+      res.status(404).render("error", {
+        error: "client trying to update a shortened URL with a non-existant id",
+      });
+    }
+  } else {
+    res.status(401).render("error", {
+      error:
+        "client cannot update a shortened URL because you are not logged in.",
+    });
+  }
 });
 
 //Respond with stringyfied JSON copy of database when a GET is sent to the /urls.json endpoint
