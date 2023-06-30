@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const cookieParser = require("cookie-parser"); //require cookie parser middleware
+const bcrypt = require("bcryptjs"); //password hashing algorithm
 
 //set view engine as ejs
 app.set("view engine", "ejs");
@@ -189,10 +190,12 @@ app.post("/register", (req, res) => {
   const user = getUserByEmail(req.body.email);
 
   if (req.body.email.length && req.body.password.length && !user) {
+    const hashedPassword = bcrypt.hashSync(req.body.password, 10);
+
     users[id] = {
       id,
       email: req.body.email,
-      password: req.body.password,
+      password: hashedPassword,
     };
 
     res.cookie("user_id", id);
@@ -208,7 +211,9 @@ app.post("/register", (req, res) => {
 //Set cookie value to user_id and send back cookie to browser, then redirect to /urls with a POST to route /logins
 app.post("/login", (req, res) => {
   const user = getUserByEmail(req.body.email);
-  const correctPassword = user ? user.password === req.body.password : null;
+  const correctPassword = user
+    ? bcrypt.compareSync(req.body.password, user.password)
+    : null;
   if (user && correctPassword) {
     res.cookie("user_id", user.id);
     return res.redirect("/urls");
