@@ -57,7 +57,7 @@ const urlsForUser = (id) => {
 };
 
 // Generate random string of 6 alphanumeric characters
-const generateRandomString = function () {
+const generateRandomString = function() {
   let result = "";
   const letters = {
     0: "a",
