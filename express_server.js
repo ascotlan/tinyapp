@@ -3,6 +3,7 @@ const app = express();
 const PORT = 8080; // default port 8080
 const cookieSession = require("cookie-session"); //require cookie session middleware
 const bcrypt = require("bcryptjs"); //password hashing algorithm
+const { getUserByEmail } = require("./helper");
 
 //set view engine as ejs
 app.set("view engine", "ejs");
@@ -42,17 +43,6 @@ const users = {
     email: "user2@example.com",
     password: "dishwasher-funk",
   },
-};
-
-// Check if usr registration email already exists in the users database
-const getUserByEmail = function (email) {
-  for (profile of Object.values(users)) {
-    if (profile.email === email) {
-      return profile;
-    }
-  }
-
-  return null;
 };
 
 //returns the URLs where the userID is equal to the id of the currently logged-in user
@@ -192,7 +182,7 @@ app.get("/login", (req, res) => {
 //Route handler: POST user sign up data and create a new user
 app.post("/register", (req, res) => {
   const id = generateRandomString();
-  const user = getUserByEmail(req.body.email);
+  const user = getUserByEmail(users, req.body.email);
 
   if (req.body.email.length && req.body.password.length && !user) {
     const hashedPassword = bcrypt.hashSync(req.body.password, 10);
@@ -216,7 +206,7 @@ app.post("/register", (req, res) => {
 
 //Set cookie value to user_id and send back cookie to browser, then redirect to /urls with a POST to route /logins
 app.post("/login", (req, res) => {
-  const user = getUserByEmail(req.body.email);
+  const user = getUserByEmail(users, req.body.email);
   const correctPassword = user
     ? bcrypt.compareSync(req.body.password, user.password)
     : null;
