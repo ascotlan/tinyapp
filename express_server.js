@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
-const cookieParser = require("cookie-parser"); //require cookie parser middleware
+const cookieSession = require("cookie-session"); //require cookie session middleware
 const bcrypt = require("bcryptjs"); //password hashing algorithm
 
 //set view engine as ejs
@@ -11,7 +11,12 @@ app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
 
 // Use middleware to Parse Cookie header and populate req.cookies with an object keyed by the cookie names.
-app.use(cookieParser());
+app.use(
+  cookieSession({
+    name: "session",
+    keys: ["key1", "key2"],
+  })
+);
 
 //sample url database
 const urlDatabase = {
@@ -138,7 +143,7 @@ app.get("/", (req, res) => {
 
 //render dynamic url values for the database and cookies at view urls_index when /urls endpoint receives GET
 app.get("/urls", (req, res) => {
-  const id = req.cookies["user_id"];
+  const id = req.session.user_id; //To read a decrypted cookie value
   if (id) {
     return res.render("urls_index", {
       urls: urlsForUser(id),
@@ -150,7 +155,7 @@ app.get("/urls", (req, res) => {
 
 //Save new database entry with random string ID with a POST to /urls
 app.post("/urls", (req, res) => {
-  if (!req.cookies["user_id"]) {
+  if (!req.session.user_id) {
     return res.status(403).render("error", {
       error: "Only Registered Users Can Shorten URLs",
     });
@@ -159,7 +164,7 @@ app.post("/urls", (req, res) => {
   const id = generateRandomString(); //generate random id string
   urlDatabase[id] = {
     longURL: req.body.longURL,
-    userID: req.cookies["user_id"],
+    userID: req.session.user_id,
   }; //populate database with new id:LongURL key:value pair
 
   // The `res.redirect()` function sends back an HTTP 302 by default.
@@ -170,7 +175,7 @@ app.post("/urls", (req, res) => {
 
 //Route handler: GET User sign up page
 app.get("/register", (req, res) => {
-  if (req.cookies["user_id"]) {
+  if (req.session.user_id) {
     return res.redirect("/urls");
   }
   res.render("register", { user: "", error: "" });
@@ -178,7 +183,7 @@ app.get("/register", (req, res) => {
 
 //Route handler: GET User login page
 app.get("/login", (req, res) => {
-  if (req.cookies["user_id"]) {
+  if (req.session.user_id) {
     return res.redirect("/urls");
   }
   res.render("login", { user: "", error: "" });
@@ -198,7 +203,8 @@ app.post("/register", (req, res) => {
       password: hashedPassword,
     };
 
-    res.cookie("user_id", id);
+    req.session.user_id = id; // set the user_id key on a session
+
     return res.redirect("/urls");
   }
 
@@ -215,7 +221,7 @@ app.post("/login", (req, res) => {
     ? bcrypt.compareSync(req.body.password, user.password)
     : null;
   if (user && correctPassword) {
-    res.cookie("user_id", user.id);
+    req.session.user_id = user.id; //set the user_id key on a session
     return res.redirect("/urls");
   }
 
@@ -228,45 +234,45 @@ app.post("/login", (req, res) => {
 
 //Implement the /logout endpoint so that it clears the user_id cookie and redirects the user back to the /urls page.
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  req.session = null; //destroy a session
   res.redirect("/login");
 });
 
 //Display view urls_new with GET to /urls/new
 app.get("/urls/new", (req, res) => {
-  if (!req.cookies["user_id"]) {
+  if (!req.session.user_id) {
     return res.redirect("/login");
   }
-  res.render("urls_new", { user: users[req.cookies["user_id"]] });
+  res.render("urls_new", { user: users[req.session.user_id] });
 });
 
 //render view urls_show with dynamic data based on id when GET sent to /urls/:id
 app.get("/urls/:id", (req, res) => {
   const id = req.params.id;
-  const userDb = urlsForUser(req.cookies["user_id"]);
+  const userDb = urlsForUser(req.session.user_id);
 
-  if (req.cookies["user_id"]) {
+  if (req.session.user_id) {
     if (userDb[id]) {
       res.render("urls_show", {
         longURL: userDb[id].longURL,
         id,
-        user: users[req.cookies["user_id"]],
+        user: users[req.session.user_id],
       });
     } else if (urlDatabase[id]) {
       res.status(403).render("missing", {
-        user: users[req.cookies["user_id"]],
+        user: users[req.session.user_id],
         error:
           "client request for a shortened URL denied because you do not have permission to access resource.",
       });
     } else {
       res.status(404).render("missing", {
-        user: users[req.cookies["user_id"]],
+        user: users[req.session.user_id],
         error: "client requests a shortened URL with a non-existant id.",
       });
     }
   } else {
     res.status(401).render("missing", {
-      user: users[req.cookies["user_id"]],
+      user: users[req.session.user_id],
       error:
         "client request for a shortened URL denied because you are not logged in.",
     });
@@ -281,9 +287,9 @@ app.get("/u/:id", (req, res) => {
 
 //Delete database entry based on id when a POST is sent to /urls/:id/delete
 app.post("/urls/:id/delete", (req, res) => {
-  const userDb = urlsForUser(req.cookies["user_id"]);
+  const userDb = urlsForUser(req.session.user_id);
 
-  if (req.cookies["user_id"]) {
+  if (req.session.user_id) {
     if (userDb[req.params.id]) {
       delete urlDatabase[req.params.id];
       res.redirect("/urls");
@@ -307,9 +313,9 @@ app.post("/urls/:id/delete", (req, res) => {
 
 //Update value to database entry based on id when a POST is sent to endpoint /urls/:id
 app.post("/urls/:id", (req, res) => {
-  const userDb = urlsForUser(req.cookies["user_id"]);
+  const userDb = urlsForUser(req.session.user_id);
 
-  if (req.cookies["user_id"]) {
+  if (req.session.user_id) {
     if (userDb[req.params.id]) {
       urlDatabase[req.params.id].longURL = req.body.longURL;
       res.redirect("/urls");
