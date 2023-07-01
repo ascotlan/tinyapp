@@ -5,13 +5,13 @@ TinyApp is a full stack web application built with Node and Express that allows 
 ## Final Product
 
 Landing Page
-!["screenshot description"](./docs/landing-page.PNG)
-URLs Home Page
-!["screenshot description"](./docs/URLs-page.PNG)
+!["Landing Page"](./docs/landing-page.PNG)
+Tinyapp Home Page
+!["URLs Home Page"](./docs/URLs-page.PNG)
 Create Shortened URL Page
-!["screenshot description"](./docs/Create-URL.PNG)
-Edit URL
-!["screenshot description"](./docs/Edit-URL.PNG)
+!["Create Shortened URL Page"](./docs/Create-URL.PNG)
+Edit URL Page
+!["Edit URL Page"](./docs/Edit-URL.PNG)
 
 ## Dependencies
 
