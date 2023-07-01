@@ -11,11 +11,11 @@ app.set("view engine", "ejs");
 // Use middleware to encode form data to UTF-8 that is sent as a buffer
 app.use(express.urlencoded({ extended: true }));
 
-// Use middleware to Parse Cookie header and populate req.cookies with an object keyed by the cookie names.
+// Use middleware to name and encrypt cookies
 app.use(
   cookieSession({
-    name: "session",
-    keys: ["key1", "key2"],
+    name: "user_id",
+    keys: ["thisissecretkey1", "thisissecretkey2"],
   })
 );
 
@@ -57,7 +57,7 @@ const urlsForUser = (id) => {
 };
 
 // Generate random string of 6 alphanumeric characters
-const generateRandomString = function() {
+const generateRandomString = function () {
   let result = "";
   const letters = {
     0: "a",
@@ -127,10 +127,6 @@ const generateRandomString = function() {
 
 //****route handlers****//
 
-app.get("/", (req, res) => {
-  res.send("Hello!");
-});
-
 //render dynamic url values for the database and cookies at view urls_index when /urls endpoint receives GET
 app.get("/urls", (req, res) => {
   const id = req.session.user_id; //To read a decrypted cookie value
@@ -196,6 +192,13 @@ app.post("/register", (req, res) => {
     req.session.user_id = id; // set the user_id key on a session
 
     return res.redirect("/urls");
+  }
+
+  if (!req.body.email.length || !req.body.password.length) {
+    return res.status(400).render("register", {
+      user: "",
+      error: `Email and password are required`,
+    });
   }
 
   res.status(400).render("register", {
@@ -325,15 +328,6 @@ app.post("/urls/:id", (req, res) => {
         "client cannot update a shortened URL because you are not logged in.",
     });
   }
-});
-
-//Respond with stringyfied JSON copy of database when a GET is sent to the /urls.json endpoint
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
 //listen on a given port
